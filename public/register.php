@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $email = trim($_POST['email'] ?? '');
   $password = $_POST['password'] ?? '';
   $confirm = $_POST['confirm_password'] ?? '';
+  $birth_date = $_POST['birth_date'] ?? null;
 
   if ($name === '' || $email === '' || $password === '' || $confirm === '') {
     $error = 'Preenche todos os campos.';
@@ -21,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $error = 'As passwords não coincidem.';
   } else {
     try {
-      $stmt = db()->prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)");
-      $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
+      $stmt = db()->prepare("INSERT INTO users (name, email, password_hash, birth_date) VALUES (?, ?, ?, ?)");
+      $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $birth_date]);
       header('Location: /bookwave/public/login.php');
       exit;
     } catch (PDOException $e) {
@@ -46,6 +47,9 @@ page_start('Registar - BookWave');
 
     <label class="block mb-1">Email</label>
     <input type="email" name="email" class="w-full border rounded px-3 py-2 mb-4" required>
+    
+    <label class="block mb-1 font-medium">Data de Nascimento</label>
+    <input type="date" name="birth_date" class="w-full border rounded-lg px-3 py-2" required>
 
     <label class="block mb-1">Password</label>
     <input type="password" name="password" class="w-full border rounded px-3 py-2 mb-4" required>

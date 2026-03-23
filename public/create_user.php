@@ -9,6 +9,7 @@ $name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 $confirmPassword = $_POST['confirm_password'] ?? '';
+$birth_date = $_POST['birth_date'] ?? null;
 
 if ($name === '' || $email === '' || $password === '' || $confirmPassword === '') {
   header('Location: /bookwave/public/admin_users.php?error=invalid_user_data');
@@ -39,8 +40,8 @@ if ($existingUser) {
   exit;
 }
 
-$stmt = db()->prepare("INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 0)");
-$stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
+$stmt = db()->prepare("INSERT INTO users (name, email, password_hash, is_admin, birth_date) VALUES (?, ?, ?, 0, ?)");
+$stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $birth_date]);
 
 header('Location: /bookwave/public/admin_users.php?success=user_created');
 exit;
