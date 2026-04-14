@@ -11,7 +11,7 @@ $userId = (int)($_GET['id'] ?? 0);
 
 if ($userId <= 0) die('Utilizador inválido.');
 
-$stmt = db()->prepare("SELECT id, name, email, is_admin, created_at FROM users WHERE id = ?");
+$stmt = db()->prepare("SELECT id, name, email, birth_date, is_admin, created_at FROM users WHERE id = ?");
 $stmt->execute([$userId]);
 $client = $stmt->fetch();
 
@@ -57,6 +57,7 @@ page_start('Detalhes do Cliente - BookWave', $admin);
     <p class="mb-2"><strong>ID:</strong> <?= (int)$client['id'] ?></p>
     <p class="mb-2"><strong>Nome:</strong> <?= htmlspecialchars($client['name']) ?></p>
     <p class="mb-2"><strong>Email:</strong> <?= htmlspecialchars($client['email']) ?></p>
+    <p class="mb-2"><strong>Data Nascimento:</strong> <?= date($client['birth_date']) ?></p>
     <p class="mb-2">
       <strong>Tipo:</strong>
       <?php if ((int)$client['is_admin'] === 1): ?>
