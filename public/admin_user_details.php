@@ -57,7 +57,12 @@ page_start('Detalhes do Cliente - BookWave', $admin);
     <p class="mb-2"><strong>ID:</strong> <?= (int)$client['id'] ?></p>
     <p class="mb-2"><strong>Nome:</strong> <?= htmlspecialchars($client['name']) ?></p>
     <p class="mb-2"><strong>Email:</strong> <?= htmlspecialchars($client['email']) ?></p>
-    <p class="mb-2"><strong>Data Nascimento:</strong> <?= date($client['birth_date']) ?></p>
+
+    <p class="mb-2">
+      <strong>Data Nascimento:</strong>
+      <?= !empty($client['birth_date']) ? date('d/m/Y', strtotime($client['birth_date'])) : '—' ?>
+    </p>
+
     <p class="mb-2">
       <strong>Tipo:</strong>
       <?php if ((int)$client['is_admin'] === 1): ?>
@@ -66,6 +71,7 @@ page_start('Detalhes do Cliente - BookWave', $admin);
         <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">Cliente</span>
       <?php endif; ?>
     </p>
+
     <p><strong>Data de registo:</strong> <?= htmlspecialchars($client['created_at']) ?></p>
 
     <div class="mt-6 flex flex-wrap gap-3">
@@ -73,12 +79,16 @@ page_start('Detalhes do Cliente - BookWave', $admin);
         <?php if ((int)$client['is_admin'] === 0): ?>
           <form method="post" action="/bookwave/public/promote_user.php">
             <input type="hidden" name="user_id" value="<?= (int)$client['id'] ?>">
-            <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white text-sm">Tornar admin</button>
+            <button type="submit" class="px-4 py-2 rounded bg-blue-600 text-white text-sm">
+              Tornar admin
+            </button>
           </form>
         <?php else: ?>
           <form method="post" action="/bookwave/public/demote_user.php">
             <input type="hidden" name="user_id" value="<?= (int)$client['id'] ?>">
-            <button type="submit" class="px-4 py-2 rounded bg-yellow-500 text-white text-sm">Tirar admin</button>
+            <button type="submit" class="px-4 py-2 rounded bg-yellow-500 text-white text-sm">
+              Tirar admin
+            </button>
           </form>
         <?php endif; ?>
       <?php endif; ?>
@@ -91,7 +101,9 @@ page_start('Detalhes do Cliente - BookWave', $admin);
     <p class="mb-2"><strong>Alugueres ativos:</strong> <?= $activeRentals ?></p>
     <p class="mb-2"><strong>Alugueres devolvidos:</strong> <?= $returnedRentals ?></p>
     <p class="mb-2"><strong>Livros ativos neste momento:</strong> <?= $activeRentals ?></p>
-    <p><strong>Livros em atraso:</strong>
+
+    <p>
+      <strong>Livros em atraso:</strong>
       <?php if ($overdueRentals > 0): ?>
         <span class="text-red-600 font-semibold"><?= $overdueRentals ?></span>
       <?php else: ?>
@@ -120,14 +132,17 @@ page_start('Detalhes do Cliente - BookWave', $admin);
             <th class="py-4 px-4">Devolvido em</th>
             <th class="py-4 px-4">Renovações</th>
             <th class="py-4 px-4">Situação</th>
+            <th class="py-4 px-4">Ações</th>
           </tr>
         </thead>
+
         <tbody>
           <?php foreach ($rentals as $r): ?>
             <tr class="border-b hover:bg-gray-50">
               <td class="py-4 px-4"><?= htmlspecialchars($r['title']) ?></td>
               <td class="py-4 px-4"><?= htmlspecialchars($r['author']) ?></td>
               <td class="py-4 px-4"><?= htmlspecialchars($r['category']) ?></td>
+
               <td class="py-4 px-4">
                 <?php if ($r['status'] === 'active'): ?>
                   <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">Ativo</span>
@@ -135,10 +150,12 @@ page_start('Detalhes do Cliente - BookWave', $admin);
                   <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">Devolvido</span>
                 <?php endif; ?>
               </td>
+
               <td class="py-4 px-4"><?= htmlspecialchars($r['rented_at']) ?></td>
               <td class="py-4 px-4"><?= htmlspecialchars($r['due_at']) ?></td>
               <td class="py-4 px-4"><?= htmlspecialchars($r['returned_at'] ?? '-') ?></td>
               <td class="py-4 px-4"><?= (int)$r['renewed_count'] ?></td>
+
               <td class="py-4 px-4">
                 <?php if ($r['status'] === 'returned'): ?>
                   <span class="text-gray-600">Concluído</span>
@@ -146,6 +163,28 @@ page_start('Detalhes do Cliente - BookWave', $admin);
                   <span class="text-red-600 font-semibold">Em atraso</span>
                 <?php else: ?>
                   <span class="text-green-600 font-semibold">Dentro do prazo</span>
+                <?php endif; ?>
+              </td>
+
+              <td class="py-4 px-4">
+                <?php if ($r['status'] === 'active'): ?>
+                  <form
+                    method="post"
+                    action="/bookwave/public/return_book.php"
+                    onsubmit="return confirm('Confirmas a devolução deste livro?')"
+                  >
+                    <input type="hidden" name="rental_id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="redirect_user_id" value="<?= (int)$client['id'] ?>">
+
+                    <button
+                      type="submit"
+                      class="px-3 py-2 rounded bg-red-600 text-white text-sm"
+                    >
+                      Devolver
+                    </button>
+                  </form>
+                <?php else: ?>
+                  <span class="text-gray-400 text-sm">—</span>
                 <?php endif; ?>
               </td>
             </tr>
