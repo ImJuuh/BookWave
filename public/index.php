@@ -8,22 +8,37 @@ $user = current_user();
 $q = trim($_GET['q'] ?? '');
 $cat = trim($_GET['cat'] ?? 'Todos');
 
-$sql = "SELECT * FROM books WHERE 1=1";
+// --- CONFIGURAÇÃO DA PAGINAÇÃO ---
+$limit = 6; // Quantidade de livros por página
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+// ---------------------------------
+
+// 1. Montar a base das consultas (uma para os dados e outra para a contagem total)
+$sqlBase = "FROM books WHERE is_active = 1";
 $params = [];
 
 if ($q !== '') {
-  $sql .= " AND (LOWER(title) LIKE ? OR LOWER(author) LIKE ?)";
+  $sqlBase .= " AND (LOWER(title) LIKE ? OR LOWER(author) LIKE ?)";
   $like = '%' . mb_strtolower($q) . '%';
   $params[] = $like;
   $params[] = $like;
 }
 
 if ($cat !== '' && $cat !== 'Todos') {
-  $sql .= " AND category = ?";
+  $sqlBase .= " AND category = ?";
   $params[] = $cat;
 }
 
-$sql .= " ORDER BY id DESC";
+// 2. Contar o total de livros com os filtros aplicados
+$countStmt = db()->prepare("SELECT COUNT(*) " . $sqlBase);
+$countStmt->execute($params);
+$totalBooks = (int)$countStmt->fetchColumn();
+$totalPages = ceil($totalBooks / $limit);
+
+// 3. Buscar os livros da página atual usando LIMIT e OFFSET
+$sql = "SELECT * " . $sqlBase . " ORDER BY id DESC LIMIT $limit OFFSET $offset";
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $books = $stmt->fetchAll();
@@ -33,6 +48,11 @@ if ($user) {
   $stmt = db()->prepare("SELECT COUNT(*) FROM rentals WHERE user_id = ? AND status = 'active'");
   $stmt->execute([$user['id']]);
   $totalRentals = (int)$stmt->fetchColumn();
+}
+
+// Função auxiliar para manter os filtros de busca nos links das páginas
+function build_page_url($page_num, $q, $cat) {
+  return '?' . http_build_query(['q' => $q, 'cat' => $cat, 'page' => $page_num]);
 }
 
 page_start('BookWave', $user);
@@ -69,6 +89,7 @@ page_start('BookWave', $user);
 </div>
 
 <form class="flex gap-2 mb-8" method="get">
+  <input type="hidden" name="page" value="1">
   <input class="border rounded px-3 py-2 w-full" name="q" placeholder="Procurar por título ou autor..." value="<?= htmlspecialchars($q) ?>">
   <select name="cat" class="border rounded px-3 py-2">
     <option value="Todos" <?= $cat === 'Todos' ? 'selected' : '' ?>>Todas as categorias</option>
@@ -86,60 +107,90 @@ page_start('BookWave', $user);
   <button class="px-4 py-2 rounded bg-slate-900 text-white">Pesquisar</button>
 </form>
 
-<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-  <?php foreach ($books as $b): ?>
-    <div class="bg-white rounded-2xl shadow border overflow-hidden hover:shadow-lg transition">
-      <a href="book.php?id=<?= (int)$b['id'] ?>" class="block">
-        <?php if (!empty($b['cover_url'])): ?>
-          <img src="<?= htmlspecialchars($b['cover_url']) ?>" alt="<?= htmlspecialchars($b['title']) ?>" class="w-full h-96 object-cover">
-        <?php else: ?>
-          <div class="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-500">Sem imagem</div>
-        <?php endif; ?>
-      </a>
-
-      <div class="p-4">
+<?php if (empty($books)): ?>
+  <div class="text-center py-12">
+    <p class="text-gray-500 text-lg">Nenhum livro encontrado para esta pesquisa.</p>
+  </div>
+<?php else: ?>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+    <?php foreach ($books as $b): ?>
+      <div class="bg-white rounded-2xl shadow border overflow-hidden hover:shadow-lg transition">
         <a href="book.php?id=<?= (int)$b['id'] ?>" class="block">
-          <h2 class="text-2xl font-semibold text-slate-900 mb-2 leading-tight"><?= htmlspecialchars($b['title']) ?></h2>
+          <?php if (!empty($b['cover_url'])): ?>
+            <img src="<?= htmlspecialchars($b['cover_url']) ?>" alt="<?= htmlspecialchars($b['title']) ?>" class="w-full h-96 object-cover">
+          <?php else: ?>
+            <div class="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-500">Sem imagem</div>
+          <?php endif; ?>
         </a>
-        <p class="text-lg text-blue-800 mb-3"><?= htmlspecialchars($b['author']) ?></p>
 
-        <div class="flex items-center gap-2 text-sm mb-4">
-          <span class="text-yellow-500">⭐</span>
-          <span class="font-semibold text-slate-900"><?= htmlspecialchars($b['rating']) ?></span>
-        </div>
+        <div class="p-4">
+          <a href="book.php?id=<?= (int)$b['id'] ?>" class="block">
+            <h2 class="text-2xl font-semibold text-slate-900 mb-2 leading-tight"><?= htmlspecialchars($b['title']) ?></h2>
+          </a>
+          <p class="text-lg text-blue-800 mb-3"><?= htmlspecialchars($b['author']) ?></p>
 
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-600">
-            <?php if ((int)$b['stock'] > 0): ?>
-              <span>📚 <?= (int)$b['stock'] ?>/<?= (int)$b['total_stock'] ?> disponíveis</span>
-            <?php else: ?>
-              <span class="text-red-600 font-semibold">Indisponível</span>
-            <?php endif; ?>
+          <div class="flex items-center gap-2 text-sm mb-4">
+            <span class="text-yellow-500">⭐</span>
+            <span class="font-semibold text-slate-900"><?= htmlspecialchars($b['rating']) ?></span>
           </div>
 
-          <?php if ($user): ?>
-            <?php if ((int)$b['stock'] > 0): ?>
-              <form method="post" action="/bookwave/public/rent_book.php">
-                <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
-                <button type="submit" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
-                  Alugar
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+              <?php if ((int)$b['stock'] > 0): ?>
+                <span>📚 <?= (int)$b['stock'] ?>/<?= (int)$b['total_stock'] ?> disponíveis</span>
+              <?php else: ?>
+                <span class="text-red-600 font-semibold">Indisponível</span>
+              <?php endif; ?>
+            </div>
+
+            <?php if ($user): ?>
+              <?php if ((int)$b['stock'] > 0): ?>
+                <form method="post" action="/bookwave/public/rent_book.php">
+                  <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                  <button type="submit" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
+                    Alugar
+                  </button>
+                </form>
+              <?php else: ?>
+                <button disabled class="bg-gray-300 text-gray-500 px-5 py-2 rounded-xl font-semibold cursor-not-allowed">
+                  Esgotado
                 </button>
-              </form>
+              <?php endif; ?>
             <?php else: ?>
-              <button disabled class="bg-gray-300 text-gray-500 px-5 py-2 rounded-xl font-semibold cursor-not-allowed">
-                Esgotado
-              </button>
+              <a href="/bookwave/public/login.php" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
+                Alugar
+              </a>
             <?php endif; ?>
-          <?php else: ?>
-            <a href="/bookwave/public/login.php" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
-              Alugar
-            </a>
-          <?php endif; ?>
+          </div>
         </div>
       </div>
+    <?php endforeach; ?>
+  </div>
+
+  <?php if ($totalPages > 1): ?>
+    <div class="flex justify-center items-center gap-2 mt-8 mb-12">
+      <?php if ($page > 1): ?>
+        <a href="<?= build_page_url($page - 1, $q, $cat) ?>" class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 transition text-sm font-medium">‹ Anterior</a>
+      <?php else: ?>
+        <span class="px-4 py-2 rounded-xl border bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">‹ Anterior</span>
+      <?php endif; ?>
+
+      <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+        <?php if ($i == $page): ?>
+          <span class="px-4 py-2 rounded-xl bg-slate-950 text-white text-sm font-semibold"><?= $i ?></span>
+        <?php else: ?>
+          <a href="<?= build_page_url($i, $q, $cat) ?>" class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 transition text-sm font-medium"><?= $i ?></a>
+        <?php endif; ?>
+      <?php endfor; ?>
+
+      <?php if ($page < $totalPages): ?>
+        <a href="<?= build_page_url($page + 1, $q, $cat) ?>" class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 transition text-sm font-medium">Próxima ›</a>
+      <?php else: ?>
+        <span class="px-4 py-2 rounded-xl border bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed">Próxima ›</span>
+      <?php endif; ?>
     </div>
-  <?php endforeach; ?>
-</div>
+  <?php endif; ?>
+<?php endif; ?>
 
 <script>
 const slides = document.querySelectorAll(".slide");
