@@ -14,7 +14,7 @@ function current_user(): ?array {
     return null;
   }
 
-  $stmt = db()->prepare("SELECT id, name, email, is_admin, created_at FROM users WHERE id = ?");
+  $stmt = db()->prepare("SELECT id, name, email, is_admin, created_at, birth_date FROM users WHERE id = ?");
   $stmt->execute([$_SESSION['user_id']]);
   $user = $stmt->fetch();
 

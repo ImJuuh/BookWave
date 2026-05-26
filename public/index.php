@@ -83,9 +83,6 @@ page_start('BookWave', $user);
 
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-3xl font-bold">Livros</h1>
-  <?php if ($user): ?>
-    <span class="text-sm text-gray-700"><?= $totalRentals ?> alugados</span>
-  <?php endif; ?>
 </div>
 
 <form class="flex gap-2 mb-8" method="get">
@@ -192,25 +189,25 @@ page_start('BookWave', $user);
   <?php endif; ?>
 <?php endif; ?>
 
-<script>
-const slides = document.querySelectorAll(".slide");
-let index = 0;
-function showSlide(i) {
-  slides.forEach(slide => slide.classList.add("hidden"));
-  slides[i].classList.remove("hidden");
-}
-document.getElementById("nextSlide").onclick = () => {
-  index = (index + 1) % slides.length;
-  showSlide(index);
-};
-document.getElementById("prevSlide").onclick = () => {
-  index = (index - 1 + slides.length) % slides.length;
-  showSlide(index);
-};
-setInterval(() => {
-  index = (index + 1) % slides.length;
-  showSlide(index);
-}, 5000);
-</script>
+  <script>
+  const slides = document.querySelectorAll(".slide");
+  let index = 0;
+  function showSlide(i) {
+    slides.forEach(slide => slide.classList.add("hidden"));
+    slides[i].classList.remove("hidden");
+  }
+  document.getElementById("nextSlide").onclick = () => {
+    index = (index + 1) % slides.length;
+    showSlide(index);
+  };
+  document.getElementById("prevSlide").onclick = () => {
+    index = (index - 1 + slides.length) % slides.length;
+    showSlide(index);
+  };
+  setInterval(() => {
+    index = (index + 1) % slides.length;
+    showSlide(index);
+  }, 5000);
+  </script>
 
 <?php page_end(); ?>
