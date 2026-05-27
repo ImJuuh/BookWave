@@ -8,7 +8,7 @@ require_admin();
 $user = current_user();
 
 // Paginação
-$perPage = 10; // 10 utilizadores por página
+$perPage = 7 ; // 7 utilizadores por página
 $page = (int)($_GET['page'] ?? 1);
 $offset = ($page - 1) * $perPage;
 
