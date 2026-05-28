@@ -11,7 +11,57 @@ if (!$user) {
     exit;
 }
 
-page_start('Perfil - BookWave', $user);
+$success = '';
+$error = '';
+
+// Processar atualização dos dados
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $birth_date = $_POST['birth_date'] ?? null;
+    $newPassword = $_POST['new_password'] ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
+
+    if ($name === '' || $email === '') {
+        $error = 'Nome e email são obrigatórios.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Email inválido.';
+    } else {
+        try {
+            // Verifica se email já existe
+            $stmt = db()->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+            $stmt->execute([$email, $user['id']]);
+            $existingUser = $stmt->fetch();
+
+            if ($existingUser) {
+                $error = 'Esse email já está a ser usado por outra conta.';
+            } else {
+                // Atualizar password se fornecida
+                if ($newPassword !== '' || $confirmPassword !== '') {
+                    if (strlen($newPassword) < 6) {
+                        $error = 'A nova password deve ter pelo menos 6 caracteres.';
+                    } elseif ($newPassword !== $confirmPassword) {
+                        $error = 'A confirmação da password não coincide.';
+                    } else {
+                        $stmt = db()->prepare("UPDATE users SET name = ?, email = ?, birth_date = ?, password_hash = ? WHERE id = ?");
+                        $stmt->execute([$name, $email, $birth_date, password_hash($newPassword, PASSWORD_DEFAULT), $user['id']]);
+                        $success = 'Dados atualizados com sucesso.';
+                    }
+                } else {
+                    // Atualizar apenas dados sem password
+                    $stmt = db()->prepare("UPDATE users SET name = ?, email = ?, birth_date = ? WHERE id = ?");
+                    $stmt->execute([$name, $email, $birth_date, $user['id']]);
+                    $success = 'Dados atualizados com sucesso.';
+                }
+
+                // Atualizar sessão
+                $user = current_user();
+            }
+        } catch (Exception $e) {
+            $error = 'Erro ao atualizar o perfil.';
+        }
+    }
+}
 
 // Estatísticas de alugueres
 $stmt = db()->prepare("SELECT COUNT(*) FROM rentals WHERE user_id = ?");
@@ -25,15 +75,34 @@ $activeRentals = (int)$stmt->fetchColumn();
 $stmt = db()->prepare("SELECT COUNT(*) FROM rentals WHERE user_id = ? AND status='active' AND due_at < NOW()");
 $stmt->execute([$user['id']]);
 $overdueRentals = (int)$stmt->fetchColumn();
+
+page_start('Perfil - BookWave', $user);
 ?>
 
-<div class="max-w-3xl mx-auto bg-white border rounded-xl p-6 relative shadow-sm">
-  <!-- Botão editar -->
-  <button 
-    onclick="document.getElementById('editForm').classList.toggle('hidden')"
-    class="absolute top-4 right-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-    Editar
-  </button>
+<div class="max-w-3xl mx-auto bg-white border rounded-xl relative shadow-sm p-6">
+  <!-- Mensagens de sucesso/erro -->
+  <?php if ($success): ?>
+      <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-700"><?= htmlspecialchars($success) ?></div>
+  <?php endif; ?>
+  <?php if ($error): ?>
+      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700"><?= htmlspecialchars($error) ?></div>
+  <?php endif; ?>
+
+ <div class="flex flex-col md:flex-row items-start justify-between mb-6 gap-2">
+  <?php if ($success): ?>
+    <div class="flex-1 p-3 bg-green-50 border border-green-200 rounded text-green-700">
+      <?= htmlspecialchars($success) ?>
+    </div>
+  <?php endif; ?>
+
+  <div class="ml-auto">
+    <button 
+      onclick="document.getElementById('editForm').classList.toggle('hidden')"
+      class="px-4 py-2"  style="background-color: #0F172A; color: white; border-radius: 0.5rem;" rounded hover:bg-blue-700">
+      Editar
+    </button>
+  </div>
+</div>
 
   <div class="flex flex-col md:flex-row items-center gap-6 mb-6">
     <!-- Foto do utilizador -->
