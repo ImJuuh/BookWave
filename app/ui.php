@@ -114,8 +114,8 @@ function page_end(): void {
     <p>© <?= date('Y') ?> BookWave. Todos os direitos reservados.</p>
 
     <div class="flex gap-6 mt-3 md:mt-0">
-      <a href="#" class="hover:text-white">Termos de Uso</a>
-      <a href="#" class="hover:text-white">Política de Privacidade</a>
+      <a href="/bookwave/public/terms.php" class="hover:text-white">Termos de Uso</a>
+      <a href="/bookwave/public/privacy.php" class="hover:text-white">Política de Privacidade</a>
     </div>
   </div>
 </footer>
