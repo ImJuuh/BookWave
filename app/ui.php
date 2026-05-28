@@ -102,7 +102,7 @@ function page_end(): void {
       <h3 class="text-white font-semibold mb-4">Localização</h3>
       <p class="text-sm text-gray-400">
         📍 Rua dos Livros, 123<br>
-        1000-001 Lisboa<br>
+        6000-100 Castelo Branco<br>
         Portugal
       </p>
     </div>
