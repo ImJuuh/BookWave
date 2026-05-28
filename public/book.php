@@ -76,9 +76,22 @@ page_start($book['title'] . ' - BookWave', $user);
           <?php endif; ?>
         </div>
 
-        <?php if ($erro === 'sem_stock'): ?>
-          <div class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-medium flex items-center gap-2">
-            <span>⚠️</span> Este livro acabou de ficar sem exemplares disponíveis para aluguer.
+        <?php if (!empty($erro)): ?>
+          <div class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-medium flex items-center gap-2 shadow-sm">
+            <span>⚠️</span>
+            <div>
+              <?php if ($erro === 'sem_stock'): ?>
+                Este livro não tem exemplares disponíveis em stock de momento.
+              <?php elseif ($erro === 'idade_insuficiente'): ?>
+                Não tens idade suficiente (mínimo 18 anos) para poder alugar este livro.
+              <?php elseif ($erro === 'ja_alugado'): ?>
+                Já tens um exemplar ativo deste livro alugado. Só podes alugar outro quando devolveres o atual.
+              <?php elseif ($erro === 'erro_sistema'): ?>
+                Ocorreu um problema ao processar o teu aluguer. Por favor, tenta novamente.
+              <?php else: ?>
+                Não foi possível processar o pedido de aluguer.
+              <?php endif; ?>
+            </div>
           </div>
         <?php endif; ?>
 
@@ -88,6 +101,7 @@ page_start($book['title'] . ' - BookWave', $user);
             <?= nl2br(htmlspecialchars($book['description'] ?: 'Nenhuma descrição ou sinopse foi fornecida para este livro.')) ?>
           </p>
         </div>
+
       </div>
 
       <div class="mt-8 pt-5 border-t border-slate-100">
