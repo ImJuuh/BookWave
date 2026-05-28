@@ -44,7 +44,7 @@ page_start('Termos e Condições - BookWave', $user);
         O BookWave funciona sob um modelo de empréstimo gratuito com base nas seguintes regras fundamentais:
       </p>
       <ul class="list-disc pl-5 mt-2 space-y-1 text-slate-600">
-        <li>Cada livro alugado tem um prazo padrão de devolução de <strong>30 dias</strong>.</li>
+        <li>Cada livro alugado tem um prazo padrão de devolução de <strong>14 dias</strong>.</li>
         <li>O utilizador <strong>não pode alugar mais do que um exemplar ativo do mesmo livro</strong> em simultâneo. Para alugar o mesmo título novamente, deve primeiro devolver o exemplar anterior.</li>
         <li>Livros com restrição de idade (<strong>+18</strong>) exigem obrigatoriamente que o utilizador tenha a idade mínima estipulada no momento do pedido.</li>
       </ul>
