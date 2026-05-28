@@ -8,12 +8,11 @@ $user = current_user();
 $q = trim($_GET['q'] ?? '');
 $cat = trim($_GET['cat'] ?? 'Todos');
 
-// --- CONFIGURAÇÃO DA PAGINAÇÃO ---
-$limit = 6; // Quantidade de livros por página
+// ---PAGINAÇÃO ---
+$limit = 6; 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
-// ---------------------------------
 
 // 1. Montar a base das consultas (uma para os dados e outra para a contagem total)
 $sqlBase = "FROM books WHERE is_active = 1";
@@ -76,19 +75,19 @@ page_start('BookWave', $user);
       <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=80" class="w-96 h-64 object-cover rounded-2xl shadow-lg">
     </div>
 
-    <button id="prevSlide" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white px-4 py-2 rounded-xl text-2xl">‹</button>
-    <button id="nextSlide" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white px-4 py-2 rounded-xl text-2xl">›</button>
+    <button id="prevSlide" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 text-white px-4 py-2 rounded-xl text-2xl hover:bg-white/30 transition">‹</button>
+    <button id="nextSlide" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 text-white px-4 py-2 rounded-xl text-2xl hover:bg-white/30 transition">›</button>
   </div>
 </section>
 
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-3xl font-bold">Livros</h1>
+  <h1 class="text-3xl font-bold text-slate-900">Livros Disponíveis</h1>
 </div>
 
 <form class="flex gap-2 mb-8" method="get">
   <input type="hidden" name="page" value="1">
-  <input class="border rounded px-3 py-2 w-full" name="q" placeholder="Procurar por título ou autor..." value="<?= htmlspecialchars($q) ?>">
-  <select name="cat" class="border rounded px-3 py-2">
+  <input class="border border-slate-200 rounded-xl px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" name="q" placeholder="Procurar por título ou autor..." value="<?= htmlspecialchars($q) ?>">
+  <select name="cat" class="border border-slate-200 rounded-xl px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
     <option value="Todos" <?= $cat === 'Todos' ? 'selected' : '' ?>>Todas as categorias</option>
     <option value="Fantasia" <?= $cat === 'Fantasia' ? 'selected' : '' ?>>Fantasia</option>
     <option value="Ficção" <?= $cat === 'Ficção' ? 'selected' : '' ?>>Ficção</option>
@@ -101,7 +100,7 @@ page_start('BookWave', $user);
     <option value="Educação" <?= $cat === 'Educação' ? 'selected' : '' ?>>Educação</option>
     <option value="Clássicos" <?= $cat === 'Clássicos' ? 'selected' : '' ?>>Clássicos</option>
   </select>
-  <button class="px-4 py-2 rounded bg-slate-900 text-white">Pesquisar</button>
+  <button class="px-5 py-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition shadow-sm">Pesquisar</button>
 </form>
 
 <?php if (empty($books)): ?>
@@ -111,55 +110,84 @@ page_start('BookWave', $user);
 <?php else: ?>
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
     <?php foreach ($books as $b): ?>
-      <div class="bg-white rounded-2xl shadow border overflow-hidden hover:shadow-lg transition">
-        <a href="book.php?id=<?= (int)$b['id'] ?>" class="block">
-          <?php if (!empty($b['cover_url'])): ?>
-            <img src="<?= htmlspecialchars($b['cover_url']) ?>" alt="<?= htmlspecialchars($b['title']) ?>" class="w-full h-96 object-cover">
-          <?php else: ?>
-            <div class="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-500">Sem imagem</div>
-          <?php endif; ?>
-        </a>
-
-        <div class="p-4">
-          <a href="book.php?id=<?= (int)$b['id'] ?>" class="block">
-            <h2 class="text-2xl font-semibold text-slate-900 mb-2 leading-tight"><?= htmlspecialchars($b['title']) ?></h2>
+      <div class="group bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+        
+        <div class="relative overflow-hidden aspect-[4/3] bg-slate-100">
+          <a href="book.php?id=<?= (int)$b['id'] ?>" class="block w-full h-full">
+            <?php if (!empty($b['cover_url'])): ?>
+              <img src="<?= htmlspecialchars($b['cover_url']) ?>" alt="<?= htmlspecialchars($b['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+            <?php else: ?>
+              <div class="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-1">
+                <span class="text-2xl">📖</span>
+                <span class="text-xs font-medium">Sem imagem</span>
+              </div>
+            <?php endif; ?>
           </a>
-          <p class="text-lg text-blue-800 mb-3"><?= htmlspecialchars($b['author']) ?></p>
+          
+          <?php if (isset($b['age_restriction'])): ?>
+            <div class="absolute top-3 left-3 z-10">
+              <?php if ((int)$b['age_restriction'] >= 18): ?>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-200 shadow-sm">
+                  🔞 18+
+                </span>
+              <?php else: ?>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+                  ✨ Livre
+                </span>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
 
-          <div class="flex items-center gap-2 text-sm mb-4">
-            <span class="text-yellow-500">⭐</span>
-            <span class="font-semibold text-slate-900"><?= htmlspecialchars($b['rating']) ?></span>
+          <div class="absolute top-3 right-3 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-white/90 backdrop-blur-sm text-slate-800 shadow-sm border border-slate-100">
+            <span class="text-amber-500">⭐</span>
+            <span><?= htmlspecialchars($b['rating']) ?></span>
+          </div>
+        </div>
+
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div class="mb-3">
+            <a href="book.php?id=<?= (int)$b['id'] ?>" class="block group-hover:text-blue-600 transition">
+              <h2 class="text-lg font-bold text-slate-900 mb-0.5 line-clamp-2 leading-tight"><?= htmlspecialchars($b['title']) ?></h2>
+            </a>
+            <p class="text-xs text-slate-500 font-medium"><?= htmlspecialchars($b['author']) ?></p>
           </div>
 
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-600">
+          <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-auto">
+            <div class="text-xs">
               <?php if ((int)$b['stock'] > 0): ?>
-                <span>📚 <?= (int)$b['stock'] ?>/<?= (int)$b['total_stock'] ?> disponíveis</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">
+                  📚 <?= (int)$b['stock'] ?>/<?= (int)$b['total_stock'] ?>
+                </span>
               <?php else: ?>
-                <span class="text-red-600 font-semibold">Indisponível</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-50 text-rose-600 font-semibold border border-rose-100">
+                  Esgotado
+                </span>
               <?php endif; ?>
             </div>
 
-            <?php if ($user): ?>
-              <?php if ((int)$b['stock'] > 0): ?>
-                <form method="post" action="/bookwave/public/rent_book.php">
-                  <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
-                  <button type="submit" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
-                    Alugar
+            <div>
+              <?php if ($user): ?>
+                <?php if ((int)$b['stock'] > 0): ?>
+                  <form method="post" action="/bookwave/public/rent_book.php">
+                    <input type="hidden" name="book_id" value="<?= (int)$b['id'] ?>">
+                    <button type="submit" class="bg-slate-950 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-blue-600 transition duration-200 shadow-sm">
+                      Alugar
+                    </button>
+                  </form>
+                <?php else: ?>
+                  <button disabled class="bg-slate-100 text-slate-400 px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-not-allowed">
+                    Indisponível
                   </button>
-                </form>
+                <?php endif; ?>
               <?php else: ?>
-                <button disabled class="bg-gray-300 text-gray-500 px-5 py-2 rounded-xl font-semibold cursor-not-allowed">
-                  Esgotado
-                </button>
+                <a href="/bookwave/public/login.php" class="bg-slate-950 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-blue-600 transition duration-200 shadow-sm block">
+                  Alugar
+                </a>
               <?php endif; ?>
-            <?php else: ?>
-              <a href="/bookwave/public/login.php" class="bg-slate-950 text-white px-5 py-2 rounded-xl font-semibold hover:bg-slate-800 transition">
-                Alugar
-              </a>
-            <?php endif; ?>
+            </div>
           </div>
         </div>
+
       </div>
     <?php endforeach; ?>
   </div>
@@ -187,27 +215,29 @@ page_start('BookWave', $user);
       <?php endif; ?>
     </div>
   <?php endif; ?>
+  
 <?php endif; ?>
 
-  <script>
-  const slides = document.querySelectorAll(".slide");
-  let index = 0;
-  function showSlide(i) {
-    slides.forEach(slide => slide.classList.add("hidden"));
-    slides[i].classList.remove("hidden");
-  }
-  document.getElementById("nextSlide").onclick = () => {
-    index = (index + 1) % slides.length;
-    showSlide(index);
-  };
-  document.getElementById("prevSlide").onclick = () => {
-    index = (index - 1 + slides.length) % slides.length;
-    showSlide(index);
-  };
-  setInterval(() => {
-    index = (index + 1) % slides.length;
-    showSlide(index);
-  }, 5000);
-  </script>
+<script>
+const slides = document.querySelectorAll(".slide");
+let index = 0;
+function showSlide(i) {
+  slides.forEach(slide => slide.classList.add("hidden"));
+  slides[i].classList.remove("hidden");
+}
+document.getElementById("nextSlide").onclick = () => {
+  index = (index + 1) % slides.length;
+  showSlide(index);
+};
+document.getElementById("prevSlide").onclick = () => {
+  index = (index - 1 + slides.length) % slides.length;
+};
+setInterval(() => {
+  index = (index + 1) % slides.length;
+  showSlide(index);
+}, 5000);
+</script>
 
 <?php page_end(); ?>
+
+```
